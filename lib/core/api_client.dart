@@ -2,7 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://autogenos.axiacorehub.com/api/';
+  // URL para pruebas locales con Laravel Herd (funciona bien en iOS Simulator)
+  static const String baseUrl = 'http://autogenos.test/api/';
+  
+  // URL de Producción (las rutas de la API aún no están desplegadas aquí)
+  // static const String baseUrl = 'https://autogenos.axiacorehub.com/api/';
   final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
