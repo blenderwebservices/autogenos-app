@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../core/api_client.dart';
+import '../models/intervention.dart';
+
+class InterventionProvider with ChangeNotifier {
+  final ApiClient _apiClient = ApiClient();
+  
+  List<Intervention> _interventions = [];
+  bool _isLoading = false;
+  
+  List<Intervention> get interventions => _interventions;
+  bool get isLoading => _isLoading;
+
+  Future<void> fetchInterventions() async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final response = await _apiClient.dio.get('/interventions');
+      final data = response.data['data'] as List;
+      _interventions = data.map((json) => Intervention.fromJson(json)).toList();
+    } on DioException catch (e) {
+      debugPrint('Error fetching interventions: ${e.message}');
+    }
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>?> generateAiDiagnostic(int interventionId) async {
+    try {
+      final response = await _apiClient.dio.post('/interventions/$interventionId/ai-diagnostic');
+      await fetchInterventions(); // Refresh list to get updated suggestions
+      return response.data;
+    } on DioException catch (e) {
+      debugPrint('Error generating AI Diagnostic: ${e.response?.data}');
+      return null;
+    }
+  }
+}
