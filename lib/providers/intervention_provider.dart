@@ -17,7 +17,7 @@ class InterventionProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _apiClient.dio.get('/interventions');
+      final response = await _apiClient.dio.get('interventions');
       final data = response.data['data'] as List;
       _interventions = data.map((json) => Intervention.fromJson(json)).toList();
     } on DioException catch (e) {
@@ -30,7 +30,7 @@ class InterventionProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>?> generateAiDiagnostic(int interventionId) async {
     try {
-      final response = await _apiClient.dio.post('/interventions/$interventionId/ai-diagnostic');
+      final response = await _apiClient.dio.post('interventions/$interventionId/ai-diagnostic');
       await fetchInterventions(); // Refresh list to get updated suggestions
       return response.data;
     } on DioException catch (e) {

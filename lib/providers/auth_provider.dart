@@ -15,12 +15,12 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
 
-  Future<bool> login(String email, String password) async {
+  Future<(bool, String?, String?)> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
     
     try {
-      final response = await _apiClient.dio.post('/login', data: {
+      final response = await _apiClient.dio.post('login', data: {
         'email': email,
         'password': password,
       });
@@ -31,20 +31,36 @@ class AuthProvider with ChangeNotifier {
         _user = User.fromJson(response.data['user']);
         _isLoading = false;
         notifyListeners();
-        return true;
+        return (true, null, null);
       }
     } on DioException catch (e) {
       debugPrint('Login error: ${e.response?.data}');
+      debugPrint('DioException details: ${e.message} | type: ${e.type}');
+      
+      String endpoint = e.requestOptions.path;
+      String message = 'Error de conexión o servidor inalcanzable';
+      
+      if (e.response?.data is Map && e.response?.data['message'] != null) {
+        message = e.response!.data['message'].toString();
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        message = e.message!;
+      }
+      
+      debugPrint('Returning error to UI: $message for endpoint $endpoint');
+      
+      _isLoading = false;
+      notifyListeners();
+      return (false, message, endpoint);
     }
     
     _isLoading = false;
     notifyListeners();
-    return false;
+    return (false, 'Invalid response format', 'login');
   }
 
   Future<void> logout() async {
     try {
-      await _apiClient.dio.post('/logout');
+      await _apiClient.dio.post('logout');
     } catch (e) {
       debugPrint('Logout error: $e');
     }
@@ -58,7 +74,7 @@ class AuthProvider with ChangeNotifier {
     final token = await _storage.read(key: 'auth_token');
     if (token != null) {
       try {
-        final response = await _apiClient.dio.get('/me');
+        final response = await _apiClient.dio.get('me');
         _user = User.fromJson(response.data['user'] ?? response.data);
       } catch (e) {
         await _storage.delete(key: 'auth_token');

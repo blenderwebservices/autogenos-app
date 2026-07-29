@@ -11,6 +11,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String? _errorMessage;
+  String? _errorEndpoint;
 
   @override
   Widget build(BuildContext context) {
@@ -39,24 +41,45 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
               SizedBox(height: 24),
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    'Error: $_errorMessage\n(Endpoint: $_errorEndpoint)',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               if (auth.isLoading)
                 CircularProgressIndicator()
               else
                 ElevatedButton(
                   onPressed: () async {
-                    final success = await auth.login(
+                    setState(() {
+                      _errorMessage = null;
+                      _errorEndpoint = null;
+                    });
+                    
+                    final result = await auth.login(
                       _emailController.text.trim(),
                       _passwordController.text.trim(),
                     );
-                    if (success) {
+                    
+                    debugPrint('UI received login result: $result');
+                    
+                    if (result.$1) {
+                      if (!mounted) return;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => DashboardScreen()),
                       );
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Invalid credentials')),
-                      );
+                      if (!mounted) return;
+                      setState(() {
+                        _errorMessage = result.$2;
+                        _errorEndpoint = result.$3;
+                      });
+                      debugPrint('Set UI errorMessage to: $_errorMessage');
                     }
                   },
                   child: Padding(
