@@ -51,4 +51,14 @@ class InterventionProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<bool> updateInterventionSymptoms(int id, String symptoms) async {
+    try {
+      await _apiClient.dio.put('interventions/$id', data: {'symptoms': symptoms});
+      await fetchInterventions(showLoader: false);
+      return true;
+    } on DioException catch (e) {
+      debugPrint('Error updating symptoms: ${e.response?.data}');
+      return false;
+    }
+  }
 }
