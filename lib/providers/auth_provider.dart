@@ -15,7 +15,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
 
-  Future<(bool, String?, String?)> login(String email, String password) async {
+  Future<(bool, String?, String?, int?)> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
     
@@ -31,7 +31,7 @@ class AuthProvider with ChangeNotifier {
         _user = User.fromJson(response.data['user']);
         _isLoading = false;
         notifyListeners();
-        return (true, null, null);
+        return (true, null, null, response.statusCode);
       }
     } on DioException catch (e) {
       debugPrint('Login error: ${e.response?.data}');
@@ -50,12 +50,12 @@ class AuthProvider with ChangeNotifier {
       
       _isLoading = false;
       notifyListeners();
-      return (false, message, endpoint);
+      return (false, message, endpoint, e.response?.statusCode);
     }
     
     _isLoading = false;
     notifyListeners();
-    return (false, 'Invalid response format', 'login');
+    return (false, 'Invalid response format', 'login', null);
   }
 
   Future<void> logout() async {

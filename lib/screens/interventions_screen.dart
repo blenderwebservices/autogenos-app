@@ -33,6 +33,7 @@ class _InterventionsScreenState extends State<InterventionsScreen> {
                 return Card(
                   margin: EdgeInsets.all(8.0),
                   child: ExpansionTile(
+                    key: PageStorageKey('intervention_${intervention.id}'),
                     title: Text('Order #${intervention.id} - ${intervention.type.toUpperCase()}'),
                     subtitle: Text('Status: ${intervention.status}'),
                     children: [
@@ -48,19 +49,35 @@ class _InterventionsScreenState extends State<InterventionsScreen> {
                                 child: Text('AI Diagnostics: ${intervention.aiSuggestions.toString()}'),
                               ),
                             SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              icon: Icon(Icons.smart_toy),
-                              label: Text('Ask GenTech AI'),
-                              onPressed: () {
-                                provider.generateAiDiagnostic(intervention.id).then((result) {
-                                  if (result != null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('AI Diagnostic Generated!')),
-                                    );
-                                  }
-                                });
-                              },
-                            )
+                            provider.isGeneratingDiagnostic(intervention.id)
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text('GenTech AI is thinking...', style: TextStyle(color: Colors.grey)),
+                                      ],
+                                    ),
+                                  )
+                                : ElevatedButton.icon(
+                                    icon: Icon(Icons.smart_toy),
+                                    label: Text('Ask GenTech AI'),
+                                    onPressed: () {
+                                      provider.generateAiDiagnostic(intervention.id).then((result) {
+                                        if (result != null) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('AI Diagnostic Generated!')),
+                                          );
+                                        }
+                                      });
+                                    },
+                                  )
                           ],
                         ),
                       )

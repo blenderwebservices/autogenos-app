@@ -8,13 +8,18 @@ class InterventionProvider with ChangeNotifier {
   
   List<Intervention> _interventions = [];
   bool _isLoading = false;
+  final Set<int> _generatingDiagnostics = {};
   
   List<Intervention> get interventions => _interventions;
   bool get isLoading => _isLoading;
+  
+  bool isGeneratingDiagnostic(int id) => _generatingDiagnostics.contains(id);
 
-  Future<void> fetchInterventions() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchInterventions({bool showLoader = true}) async {
+    if (showLoader) {
+      _isLoading = true;
+      notifyListeners();
+    }
     
     try {
       final response = await _apiClient.dio.get('interventions');
@@ -24,18 +29,26 @@ class InterventionProvider with ChangeNotifier {
       debugPrint('Error fetching interventions: ${e.message}');
     }
     
-    _isLoading = false;
+    if (showLoader) {
+      _isLoading = false;
+    }
     notifyListeners();
   }
 
   Future<Map<String, dynamic>?> generateAiDiagnostic(int interventionId) async {
+    _generatingDiagnostics.add(interventionId);
+    notifyListeners();
+    
     try {
       final response = await _apiClient.dio.post('interventions/$interventionId/ai-diagnostic');
-      await fetchInterventions(); // Refresh list to get updated suggestions
+      await fetchInterventions(showLoader: false); // Refresh list without global loader
       return response.data;
     } on DioException catch (e) {
       debugPrint('Error generating AI Diagnostic: ${e.response?.data}');
       return null;
+    } finally {
+      _generatingDiagnostics.remove(interventionId);
+      notifyListeners();
     }
   }
 }
